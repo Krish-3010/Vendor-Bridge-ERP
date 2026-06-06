@@ -1,4 +1,4 @@
-<![CDATA[# 🌉 VendorBridge ERP
+## 🌉 VendorBridge ERP
 
 **VendorBridge** is a full-featured **Procurement & Vendor Management ERP** built with Django. It digitises the entire procurement lifecycle — from raising a Request for Quotation (RFQ) to generating invoices — with role-based access, real-time notifications, and a premium dark/light UI.
 
