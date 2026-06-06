@@ -8,17 +8,17 @@
   <div class="stat">
     <div class="stat-icon amber">⏳</div>
     <div class="stat-label">Pending</div>
-    <div class="stat-value count-up" data-value="{{ approvals|length }}">{{ approvals|length }}</div>
+    <div class="stat-value count-up" data-value="{{ pending_count }}">{{ pending_count }}</div>
   </div>
   <div class="stat">
     <div class="stat-icon green">✅</div>
     <div class="stat-label">Approved</div>
-    <div class="stat-value">—</div>
+    <div class="stat-value count-up" data-value="{{ approved_count }}">{{ approved_count }}</div>
   </div>
   <div class="stat">
     <div class="stat-icon red">❌</div>
     <div class="stat-label">Rejected</div>
-    <div class="stat-value">—</div>
+    <div class="stat-value count-up" data-value="{{ rejected_count }}">{{ rejected_count }}</div>
   </div>
 </div>
 

@@ -136,7 +136,11 @@ class UserProfileForm(forms.ModelForm):
 
 
 class RFQForm(forms.ModelForm):
-    vendors = forms.ModelMultipleChoiceField(queryset=Vendor.objects.filter(status=Vendor.ACTIVE), required=True)
+    vendors = forms.ModelMultipleChoiceField(
+        queryset=Vendor.objects.filter(status=Vendor.ACTIVE),
+        required=False,
+        help_text="Select vendors to invite (required when sending; optional for drafts)",
+    )
     item_names = forms.CharField(widget=forms.Textarea(attrs={"rows": 3}), help_text="One item per line")
     quantities = forms.CharField(widget=forms.Textarea(attrs={"rows": 3}), help_text="One quantity per line")
 

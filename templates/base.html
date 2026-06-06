@@ -17,7 +17,35 @@
     <!-- ── Sidebar ─────────────────────────────── -->
     <aside class="sidebar">
       <a class="brand" href="{% url 'dashboard' %}">
-        <span class="brand-mark">VB</span>
+        <span class="brand-mark">
+          <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" width="40" height="40">
+            <!-- Bridge arch -->
+            <path d="M6 28 Q20 8 34 28" stroke="url(#bg1)" stroke-width="3" stroke-linecap="round" fill="none"/>
+            <!-- Left pillar -->
+            <line x1="10" y1="28" x2="10" y2="34" stroke="url(#bg1)" stroke-width="2.5" stroke-linecap="round"/>
+            <!-- Right pillar -->
+            <line x1="30" y1="28" x2="30" y2="34" stroke="url(#bg1)" stroke-width="2.5" stroke-linecap="round"/>
+            <!-- Road / deck -->
+            <line x1="4" y1="28" x2="36" y2="28" stroke="url(#bg2)" stroke-width="2.5" stroke-linecap="round"/>
+            <!-- Cables left -->
+            <line x1="10" y1="20" x2="10" y2="28" stroke="url(#bg1)" stroke-width="1.5" stroke-linecap="round" opacity="0.7"/>
+            <line x1="15" y1="16" x2="15" y2="28" stroke="url(#bg1)" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
+            <!-- Cables right -->
+            <line x1="30" y1="20" x2="30" y2="28" stroke="url(#bg1)" stroke-width="1.5" stroke-linecap="round" opacity="0.7"/>
+            <line x1="25" y1="16" x2="25" y2="28" stroke="url(#bg1)" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
+            <!-- Gradient defs -->
+            <defs>
+              <linearGradient id="bg1" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#2dda8a"/>
+                <stop offset="100%" stop-color="#22c5a8"/>
+              </linearGradient>
+              <linearGradient id="bg2" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stop-color="#2dda8a"/>
+                <stop offset="100%" stop-color="#5eaaff"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </span>
         <span class="brand-text">
           <span class="brand-name">VendorBridge</span>
           <span class="brand-sub">Procurement ERP</span>
@@ -30,6 +58,11 @@
           <a href="{% url route %}" class="{% if request.resolver_match.url_name == route %}active{% endif %}">
             <span class="nav-icon">{{ icon|safe }}</span>
             <span class="nav-label">{{ label }}</span>
+            {% if route == "quotations" and quoted_rfq_count %}
+              <span class="nav-badge">{{ quoted_rfq_count }}</span>
+            {% elif route == "approvals" and pending_approvals_count %}
+              <span class="nav-badge">{{ pending_approvals_count }}</span>
+            {% endif %}
           </a>
         {% endfor %}
       </nav>

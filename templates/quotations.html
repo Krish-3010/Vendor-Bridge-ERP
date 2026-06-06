@@ -3,104 +3,225 @@
 {% block page_title %}Quotations{% endblock %}
 {% block content %}
 
-<!-- RFQs Awaiting Quotations -->
-<section class="panel">
-  <div class="panel-head">
-    <h2>📩 RFQs Awaiting Your Quotation</h2>
-    <span class="chart-badge">{{ rfqs|length }} open</span>
-  </div>
-  <table>
-    <thead>
-      <tr>
-        <th>RFQ Title</th>
-        <th>Category</th>
-        <th>Deadline</th>
-        <th>Status</th>
-        <th>Action</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for rfq in rfqs %}
-        <tr>
-          <td>
-            <strong style="font-size:13px;">{{ rfq.title }}</strong>
-            <div style="font-size:11px;color:var(--muted);">{{ rfq.description|truncatechars:60 }}</div>
-          </td>
-          <td>{{ rfq.category }}</td>
-          <td>
-            <span style="font-size:12px;">{{ rfq.deadline }}</span>
-          </td>
-          <td><span class="badge {{ rfq.status }}">{{ rfq.get_status_display }}</span></td>
-          <td>
-            <a class="btn sm primary" href="{% url 'submit_quotation' rfq.id %}" id="quoteRFQ{{ rfq.id }}">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              Submit / Edit
-            </a>
-          </td>
-        </tr>
-      {% empty %}
-        <tr>
-          <td colspan="5">
-            <div class="empty-state">
-              <div class="empty-state-icon">📭</div>
-              <p>No RFQs assigned to you yet.</p>
-            </div>
-          </td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</section>
+{% if role == "vendor" %}
+  {# ═══════════════════════════════════════════════════════════════ #}
+  {# VENDOR VIEW: RFQs to quote + their own submitted quotes         #}
+  {# ═══════════════════════════════════════════════════════════════ #}
 
-<!-- Submitted Quotations -->
-<section class="panel">
-  <div class="panel-head">
-    <h2>📤 Submitted Quotations</h2>
-    <span class="chart-badge">{{ quotations|length }} total</span>
-  </div>
-  <table>
-    <thead>
-      <tr>
-        <th>RFQ</th>
-        <th>Vendor</th>
-        <th>Grand Total</th>
-        <th>Delivery</th>
-        <th>GST</th>
-        <th>Status</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for quote in quotations %}
+  <section class="panel" style="margin-bottom:20px;">
+    <div class="panel-head">
+      <h2>📩 RFQs Awaiting Your Quotation</h2>
+      <span class="chart-badge">{{ rfqs|length }} open</span>
+    </div>
+    <table>
+      <thead>
         <tr>
-          <td>
-            <strong style="font-size:13px;">{{ quote.rfq.title }}</strong>
-            <div style="font-size:11px;color:var(--muted);">{{ quote.submitted_at|date:"M d, Y" }}</div>
-          </td>
-          <td>
-            <div style="display:flex;align-items:center;gap:8px;">
-              <div style="width:28px;height:28px;border-radius:50%;background:var(--grad-brand);display:grid;place-items:center;font-size:11px;font-weight:900;color:#060e0a;flex-shrink:0;">
-                {{ quote.vendor.name|first|upper }}
+          <th>RFQ Title</th>
+          <th>Category</th>
+          <th>Deadline</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for rfq in rfqs %}
+          <tr>
+            <td>
+              <strong style="font-size:13px;">{{ rfq.title }}</strong>
+              <div style="font-size:11px;color:var(--muted);">{{ rfq.description|truncatechars:60 }}</div>
+            </td>
+            <td>{{ rfq.category }}</td>
+            <td><span style="font-size:12px;">{{ rfq.deadline }}</span></td>
+            <td><span class="badge {{ rfq.status }}">{{ rfq.get_status_display }}</span></td>
+            <td>
+              <a class="btn sm primary" href="{% url 'submit_quotation' rfq.id %}" id="quoteRFQ{{ rfq.id }}">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Submit / Edit Quote
+              </a>
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="5"><div class="empty-state"><div class="empty-state-icon">📭</div><p>No RFQs assigned to you yet.</p></div></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <h2>📤 My Submitted Quotations</h2>
+      <span class="chart-badge">{{ quotations|length }} total</span>
+    </div>
+    <table>
+      <thead>
+        <tr><th>RFQ</th><th>Grand Total</th><th>Delivery</th><th>GST</th><th>Submitted</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        {% for quote in quotations %}
+          <tr>
+            <td>
+              <strong style="font-size:13px;">{{ quote.rfq.title }}</strong>
+              <div style="font-size:11px;color:var(--muted);">{{ quote.rfq.category }}</div>
+            </td>
+            <td><strong style="color:var(--green);">₹{{ quote.grand_total|floatformat:0 }}</strong></td>
+            <td>{{ quote.delivery_days }} days</td>
+            <td>{{ quote.gst_percent }}%</td>
+            <td style="font-size:12px;color:var(--muted);">{{ quote.submitted_at|date:"M d, Y"|default:"—" }}</td>
+            <td><span class="badge {{ quote.status }}">{{ quote.get_status_display }}</span></td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="6"><div class="empty-state"><div class="empty-state-icon">📋</div><p>No quotations submitted yet.</p></div></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+{% else %}
+  {# ═══════════════════════════════════════════════════════════════ #}
+  {# OFFICER / MANAGER / ADMIN VIEW                                   #}
+  {# ═══════════════════════════════════════════════════════════════ #}
+
+  {# Section 1: RFQs that have received quotes — need review & approval #}
+  <section class="panel" style="margin-bottom:20px;">
+    <div class="panel-head">
+      <div>
+        <h2>🔍 Quoted RFQs — Awaiting Review &amp; Approval</h2>
+        <p style="font-size:12px;color:var(--muted);margin-top:3px;">
+          Compare vendor bids and select one to send to the approval workflow.
+        </p>
+      </div>
+      <span class="chart-badge">{{ rfqs_to_review|length }} awaiting</span>
+    </div>
+
+    {% if rfqs_to_review %}
+      <div style="display:grid;gap:12px;">
+        {% for rfq in rfqs_to_review %}
+          <div class="review-rfq-row">
+            <div class="review-rfq-info">
+              <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                <span class="badge quoted">Quoted</span>
+                <strong style="font-size:14px;">{{ rfq.title }}</strong>
+                <span style="font-size:12px;color:var(--muted);">{{ rfq.category }}</span>
               </div>
-              {{ quote.vendor.name }}
+              <div style="margin-top:8px;display:flex;gap:20px;flex-wrap:wrap;">
+                {% for quote in rfq.quotations.all %}
+                  <div class="vendor-quote-chip">
+                    <div class="vendor-chip-avatar">{{ quote.vendor.name|first|upper }}</div>
+                    <div>
+                      <div style="font-size:12px;font-weight:600;color:var(--text);">{{ quote.vendor.name }}</div>
+                      <div style="font-size:13px;font-weight:800;color:var(--green);">₹{{ quote.grand_total|floatformat:0 }}</div>
+                    </div>
+                  </div>
+                {% empty %}
+                  <span style="font-size:12px;color:var(--faint);">No quotes yet</span>
+                {% endfor %}
+              </div>
             </div>
-          </td>
-          <td><strong style="color:var(--green);">₹{{ quote.grand_total|floatformat:0 }}</strong></td>
-          <td>{{ quote.delivery_days }} days</td>
-          <td>{{ quote.gst_percent }}%</td>
-          <td><span class="badge {{ quote.status }}">{{ quote.status }}</span></td>
-        </tr>
-      {% empty %}
-        <tr>
-          <td colspan="6">
-            <div class="empty-state">
-              <div class="empty-state-icon">📋</div>
-              <p>No quotations submitted yet.</p>
-            </div>
-          </td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</section>
+            <a class="btn primary" href="{% url 'compare_rfq' rfq.id %}" id="compareRFQ{{ rfq.id }}">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+              Compare &amp; Select
+            </a>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-state" style="padding:24px 0;">
+        <div class="empty-state-icon">✅</div>
+        <p>No quoted RFQs awaiting review. All caught up!</p>
+      </div>
+    {% endif %}
+  </section>
 
+  {# Section 2: All submitted quotations — full history #}
+  <section class="panel">
+    <div class="panel-head">
+      <h2>📤 All Submitted Quotations</h2>
+      <span class="chart-badge">{{ quotations|length }} total</span>
+    </div>
+    <table>
+      <thead>
+        <tr><th>RFQ</th><th>Vendor</th><th>Grand Total</th><th>Delivery</th><th>GST</th><th>Submitted</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        {% for quote in quotations %}
+          <tr>
+            <td>
+              <strong style="font-size:13px;">{{ quote.rfq.title }}</strong>
+              <div style="font-size:11px;color:var(--muted);">{{ quote.rfq.category }}</div>
+            </td>
+            <td>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div style="width:28px;height:28px;border-radius:50%;background:var(--grad-brand);display:grid;place-items:center;font-size:11px;font-weight:900;color:#060e0a;flex-shrink:0;">
+                  {{ quote.vendor.name|first|upper }}
+                </div>
+                {{ quote.vendor.name }}
+              </div>
+            </td>
+            <td><strong style="color:var(--green);">₹{{ quote.grand_total|floatformat:0 }}</strong></td>
+            <td>{{ quote.delivery_days }} days</td>
+            <td>{{ quote.gst_percent }}%</td>
+            <td style="font-size:12px;color:var(--muted);">{{ quote.submitted_at|date:"M d, Y"|default:"—" }}</td>
+            <td><span class="badge {{ quote.status }}">{{ quote.get_status_display }}</span></td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="7"><div class="empty-state"><div class="empty-state-icon">📋</div><p>No quotations submitted yet.</p></div></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+{% endif %}
+
+<style>
+.review-rfq-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  transition: all 0.2s ease;
+  flex-wrap: wrap;
+}
+.review-rfq-row:hover {
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px var(--green-glow);
+}
+.review-rfq-info { flex: 1; min-width: 0; }
+
+.vendor-quote-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  background: var(--panel);
+}
+.vendor-chip-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--grad-brand);
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  font-weight: 900;
+  color: #060e0a;
+  flex-shrink: 0;
+}
+.chart-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: var(--green-glow);
+  border: 1px solid rgba(45,218,138,0.3);
+  color: var(--green);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+</style>
 {% endblock %}

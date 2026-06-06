@@ -206,16 +206,20 @@ img { max-width: 100%; }
 .brand-mark {
   display: grid;
   place-items: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  background: var(--grad-brand);
-  color: #060e0a;
-  font-weight: 900;
-  font-size: 13px;
-  letter-spacing: -0.5px;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: rgba(45, 218, 138, 0.08);
+  border: 1px solid rgba(45, 218, 138, 0.25);
   flex-shrink: 0;
-  box-shadow: 0 4px 16px rgba(45,218,138,0.3);
+  box-shadow: 0 4px 16px rgba(45,218,138,0.15);
+  transition: all 0.2s ease;
+  overflow: visible;
+}
+
+.brand:hover .brand-mark {
+  box-shadow: 0 6px 24px rgba(45,218,138,0.3);
+  background: rgba(45, 218, 138, 0.12);
 }
 
 .brand-text { display: grid; gap: 1px; }

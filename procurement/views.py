@@ -379,11 +379,14 @@ def vendors(request):
 @login_required
 def rfqs(request):
     role = user_role(request.user)
+    status_filter = request.GET.get("status", "")
     if role == Profile.VENDOR:
         vendor = getattr(request.user, "vendor_profile", None)
         rfq_list = RFQ.objects.filter(vendor_links__vendor=vendor).distinct() if vendor else RFQ.objects.none()
     else:
         rfq_list = RFQ.objects.all()
+    if status_filter:
+        rfq_list = rfq_list.filter(status=status_filter)
     return render(request, "rfqs.html", {"rfqs": rfq_list.order_by("-created_at")})
 
 
@@ -391,27 +394,104 @@ def rfqs(request):
 def create_rfq(request):
     form = RFQForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
+        is_draft = "save_draft" in request.POST
         rfq = form.save(commit=False)
         rfq.created_by = request.user
-        rfq.status = RFQ.OPEN
-        rfq.save()
+
+        if is_draft:
+            rfq.status = RFQ.DRAFT
+            rfq.save()
+            # Save items if provided
+            item_names = [line.strip() for line in form.cleaned_data["item_names"].splitlines() if line.strip()]
+            quantities = [line.strip() for line in form.cleaned_data["quantities"].splitlines() if line.strip()]
+            for index, name in enumerate(item_names):
+                qty = int(quantities[index]) if index < len(quantities) and quantities[index].isdigit() else 1
+                RFQItem.objects.create(rfq=rfq, item_name=name, quantity=qty)
+            log(request.user, "RFQ draft saved", f"'{rfq.title}' was saved as a draft.")
+            messages.success(request, f"Draft '{rfq.title}' saved. You can send it to vendors later from the RFQ list.")
+            return redirect("rfqs")
+        else:
+            # Sending to vendors — vendors are required
+            vendors = form.cleaned_data.get("vendors")
+            if not vendors:
+                form.add_error("vendors", "Please select at least one vendor to send the RFQ.")
+                return render(request, "rfq_form.html", {"form": form})
+            rfq.status = RFQ.OPEN
+            rfq.save()
+            item_names = [line.strip() for line in form.cleaned_data["item_names"].splitlines() if line.strip()]
+            quantities = [line.strip() for line in form.cleaned_data["quantities"].splitlines() if line.strip()]
+            for index, name in enumerate(item_names):
+                qty = int(quantities[index]) if index < len(quantities) and quantities[index].isdigit() else 1
+                RFQItem.objects.create(rfq=rfq, item_name=name, quantity=qty)
+            for vendor in vendors:
+                RFQVendor.objects.create(rfq=rfq, vendor=vendor)
+                if vendor.user:
+                    Notification.objects.create(
+                        user=vendor.user,
+                        title="New RFQ invitation",
+                        message=f"You were invited to quote for {rfq.title}.",
+                    )
+            log(request.user, "RFQ created", f"{rfq.title} was sent to {vendors.count()} vendors.")
+            messages.success(request, "RFQ saved and sent to assigned vendors.")
+            return redirect("rfqs")
+    return render(request, "rfq_form.html", {"form": form})
+
+
+@login_required
+def edit_rfq(request, pk):
+    """Allow editing a draft RFQ and optionally sending it to vendors."""
+    rfq = get_object_or_404(RFQ, pk=pk, created_by=request.user, status=RFQ.DRAFT)
+    # Pre-populate item_names and quantities from existing items
+    existing_items = list(rfq.items.all())
+    initial = {
+        "title": rfq.title,
+        "category": rfq.category,
+        "deadline": rfq.deadline,
+        "description": rfq.description,
+        "item_names": "\n".join(i.item_name for i in existing_items),
+        "quantities": "\n".join(str(i.quantity) for i in existing_items),
+        "vendors": rfq.vendor_links.values_list("vendor_id", flat=True),
+    }
+    form = RFQForm(request.POST or None, initial=initial)
+    if request.method == "POST" and form.is_valid():
+        is_draft = "save_draft" in request.POST
+        rfq.title = form.cleaned_data["title"]
+        rfq.category = form.cleaned_data["category"]
+        rfq.deadline = form.cleaned_data["deadline"]
+        rfq.description = form.cleaned_data["description"]
+        # Rebuild items
+        rfq.items.all().delete()
+        rfq.vendor_links.all().delete()
         item_names = [line.strip() for line in form.cleaned_data["item_names"].splitlines() if line.strip()]
         quantities = [line.strip() for line in form.cleaned_data["quantities"].splitlines() if line.strip()]
         for index, name in enumerate(item_names):
             qty = int(quantities[index]) if index < len(quantities) and quantities[index].isdigit() else 1
             RFQItem.objects.create(rfq=rfq, item_name=name, quantity=qty)
-        for vendor in form.cleaned_data["vendors"]:
-            RFQVendor.objects.create(rfq=rfq, vendor=vendor)
-            if vendor.user:
-                Notification.objects.create(
-                    user=vendor.user,
-                    title="New RFQ invitation",
-                    message=f"You were invited to quote for {rfq.title}.",
-                )
-        log(request.user, "RFQ created", f"{rfq.title} was sent to {form.cleaned_data['vendors'].count()} vendors.")
-        messages.success(request, "RFQ saved and sent to assigned vendors.")
-        return redirect("rfqs")
-    return render(request, "rfq_form.html", {"form": form})
+        if is_draft:
+            rfq.status = RFQ.DRAFT
+            rfq.save()
+            log(request.user, "RFQ draft updated", f"'{rfq.title}' draft was updated.")
+            messages.success(request, f"Draft '{rfq.title}' updated.")
+            return redirect("rfqs")
+        else:
+            vendors = form.cleaned_data.get("vendors")
+            if not vendors:
+                form.add_error("vendors", "Please select at least one vendor to send the RFQ.")
+                return render(request, "rfq_form.html", {"form": form, "rfq": rfq})
+            rfq.status = RFQ.OPEN
+            rfq.save()
+            for vendor in vendors:
+                RFQVendor.objects.create(rfq=rfq, vendor=vendor)
+                if vendor.user:
+                    Notification.objects.create(
+                        user=vendor.user,
+                        title="New RFQ invitation",
+                        message=f"You were invited to quote for {rfq.title}.",
+                    )
+            log(request.user, "Draft RFQ sent", f"'{rfq.title}' was sent to {vendors.count()} vendors.")
+            messages.success(request, f"RFQ '{rfq.title}' sent to vendors!")
+            return redirect("rfqs")
+    return render(request, "rfq_form.html", {"form": form, "rfq": rfq})
 
 
 @login_required
@@ -419,12 +499,24 @@ def quotations(request):
     role = user_role(request.user)
     if role == Profile.VENDOR:
         vendor = getattr(request.user, "vendor_profile", None)
-        rfqs_to_quote = RFQ.objects.filter(vendor_links__vendor=vendor).distinct() if vendor else RFQ.objects.none()
+        rfqs_to_quote = RFQ.objects.filter(
+            vendor_links__vendor=vendor, status__in=[RFQ.OPEN, RFQ.QUOTED]
+        ).distinct() if vendor else RFQ.objects.none()
         quotes = Quotation.objects.filter(vendor=vendor) if vendor else Quotation.objects.none()
+        rfqs_to_review = RFQ.objects.none()
     else:
-        rfqs_to_quote = RFQ.objects.all()
+        rfqs_to_quote = RFQ.objects.none()   # non-vendors don't submit quotes
         quotes = Quotation.objects.select_related("rfq", "vendor").all()
-    return render(request, "quotations.html", {"rfqs": rfqs_to_quote, "quotations": quotes})
+        # RFQs that have received quotes but haven't been sent to approval yet
+        rfqs_to_review = RFQ.objects.filter(
+            status=RFQ.QUOTED
+        ).prefetch_related("quotations", "quotations__vendor").order_by("-created_at")
+    return render(request, "quotations.html", {
+        "rfqs": rfqs_to_quote,
+        "quotations": quotes,
+        "rfqs_to_review": rfqs_to_review,
+        "role": role,
+    })
 
 
 @login_required
@@ -478,11 +570,20 @@ def compare_rfq(request, pk):
 @login_required
 def approvals(request):
     approval_list = Approval.objects.select_related("rfq", "quotation__vendor").order_by("-created_at")
-    return render(request, "approvals.html", {"approvals": approval_list})
+    return render(request, "approvals.html", {
+        "approvals": approval_list,
+        "pending_count":  approval_list.filter(status=Approval.PENDING).count(),
+        "approved_count": approval_list.filter(status=Approval.APPROVED).count(),
+        "rejected_count": approval_list.filter(status=Approval.REJECTED).count(),
+    })
 
 
 @login_required
 def decide_approval(request, approval_id, decision):
+    role = user_role(request.user)
+    if role not in (Profile.MANAGER, Profile.ADMIN):
+        messages.error(request, "Only managers and admins can approve or reject procurement requests.")
+        return redirect("approvals")
     approval = get_object_or_404(Approval, pk=approval_id)
     approval.status = Approval.APPROVED if decision == "approve" else Approval.REJECTED
     approval.approver = request.user
@@ -505,19 +606,32 @@ def purchase_orders(request):
 
 @login_required
 def generate_po(request, approval_id):
+    role = user_role(request.user)
+    if role not in (Profile.OFFICER, Profile.MANAGER, Profile.ADMIN):
+        messages.error(request, "You do not have permission to generate purchase orders.")
+        return redirect("purchase_orders")
     approval = get_object_or_404(Approval, pk=approval_id, status=Approval.APPROVED)
-    # Use only rfq (OneToOneField) as the lookup key to avoid UNIQUE constraint violations
-    # when the same RFQ already has a PO from a prior attempt
-    try:
-        po = PurchaseOrder.objects.get(rfq=approval.rfq)
-        created = False
-    except PurchaseOrder.DoesNotExist:
-        po = PurchaseOrder.objects.create(
-            rfq=approval.rfq,
-            quotation=approval.quotation,
-            po_number=f"PO-{timezone.now():%Y%m%d}-{approval.id:04d}",
-        )
-        created = True
+
+    # Build a unique PO number: date + approval-id + microseconds to avoid
+    # collisions with seed data or repeated clicks on the same day.
+    now = timezone.now()
+    candidate_po_number = f"PO-{now:%Y%m%d}-{approval.id:04d}"
+    # If that number is already taken by a *different* RFQ, append microseconds
+    if PurchaseOrder.objects.filter(po_number=candidate_po_number).exclude(rfq=approval.rfq).exists():
+        candidate_po_number = f"PO-{now:%Y%m%d%H%M%S}-{approval.id:04d}"
+
+    po, created = PurchaseOrder.objects.update_or_create(
+        rfq=approval.rfq,
+        defaults={
+            "quotation": approval.quotation,
+            "po_number": candidate_po_number,
+        },
+    )
+    # Ensure po_number is not stale when the row already existed with a different number
+    if not created and po.po_number != candidate_po_number:
+        # Row existed — keep its original number; don't overwrite
+        pass
+
     approval.rfq.status = RFQ.ORDERED
     approval.rfq.save()
     if created:
@@ -537,6 +651,10 @@ def invoices(request):
 
 @login_required
 def generate_invoice(request, po_id):
+    role = user_role(request.user)
+    if role not in (Profile.OFFICER, Profile.MANAGER, Profile.ADMIN):
+        messages.error(request, "You do not have permission to generate invoices.")
+        return redirect("invoices")
     po = get_object_or_404(PurchaseOrder, pk=po_id)
     invoice, created = Invoice.objects.get_or_create(
         purchase_order=po,

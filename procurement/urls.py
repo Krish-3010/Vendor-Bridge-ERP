@@ -12,6 +12,7 @@ urlpatterns = [
     path("vendors/", views.vendors, name="vendors"),
     path("rfqs/", views.rfqs, name="rfqs"),
     path("rfqs/create/", views.create_rfq, name="create_rfq"),
+    path("rfqs/<int:pk>/edit/", views.edit_rfq, name="edit_rfq"),
     path("rfqs/<int:pk>/compare/", views.compare_rfq, name="compare_rfq"),
     path("quotations/", views.quotations, name="quotations"),
     path("quotations/<int:rfq_id>/submit/", views.submit_quotation, name="submit_quotation"),
