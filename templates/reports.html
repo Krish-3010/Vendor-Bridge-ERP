@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Reports & Analytics | VendorBridge{% endblock %}
+{% block page_title %}Reports & Analytics{% endblock %}
+
+{% block content %}
+
+<!-- Spend Hero Banner -->
+<div class="spend-hero">
+  <div>
+    <div class="stat-label" style="margin-bottom:6px;">Total Procurement Spend</div>
+    <div class="spend-amount">₹<span class="count-up" data-value="{{ reports.total_po_value }}">{{ reports.total_po_value|floatformat:0 }}</span></div>
+    <div class="spend-label">Across all purchase orders</div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;text-align:center;">
+    <div>
+      <div class="stat-value count-up" data-value="{{ reports.rfq_count }}" style="font-size:28px;">{{ reports.rfq_count }}</div>
+      <div class="stat-label" style="margin-top:4px;">Total RFQs</div>
+    </div>
+    <div>
+      <div class="stat-value count-up" data-value="{{ reports.quote_count }}" style="font-size:28px;">{{ reports.quote_count }}</div>
+      <div class="stat-label" style="margin-top:4px;">Quotations</div>
+    </div>
+    <div>
+      <div class="stat-value count-up" data-value="{{ reports.invoice_count }}" style="font-size:28px;">{{ reports.invoice_count }}</div>
+      <div class="stat-label" style="margin-top:4px;">Invoices</div>
+    </div>
+  </div>
+</div>
+
+<!-- Charts Row 1 -->
+<div class="chart-grid" style="margin-bottom:20px;">
+
+  <!-- RFQ Pipeline Funnel -->
+  <div class="chart-panel">
+    <div class="chart-header">
+      <div>
+        <div class="chart-title">Procurement Funnel</div>
+        <div class="chart-subtitle">Volume at each stage of the pipeline</div>
+      </div>
+      <span class="chart-badge">Pipeline</span>
+    </div>
+    <div class="chart-wrapper" style="height:240px;">
+      <canvas id="chartFunnel"
+        data-values="{{ funnel_values }}"
+        style="max-height:240px;">
+      </canvas>
+    </div>
+  </div>
+
+  <!-- RFQ Status Doughnut -->
+  <div class="chart-panel">
+    <div class="chart-header">
+      <div>
+        <div class="chart-title">RFQ Status Distribution</div>
+        <div class="chart-subtitle">Breakdown of all requests by current status</div>
+      </div>
+      <span class="chart-badge">Live</span>
+    </div>
+    <div class="chart-wrapper" style="height:240px;display:flex;justify-content:center;">
+      <canvas id="chartRfqStatus"
+        data-values="{{ chart_rfq_status_values }}"
+        width="220" height="220"
+        style="max-width:220px;max-height:220px;">
+      </canvas>
+    </div>
+    <div class="chart-legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#5eaaff;"></div>Open</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#ffbe45;"></div>Quoted</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#9b72ff;"></div>In Approval</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#2dda8a;"></div>Approved</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#22c5a8;"></div>Ordered</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Charts Row 2 -->
+<div class="chart-grid" style="margin-bottom:20px;">
+
+  <!-- Monthly Spend Line -->
+  <div class="chart-panel">
+    <div class="chart-header">
+      <div>
+        <div class="chart-title">Monthly Procurement Spend (₹)</div>
+        <div class="chart-subtitle">Total PO value for the last 6 months</div>
+      </div>
+    </div>
+    <div class="chart-wrapper" style="height:220px;">
+      <canvas id="chartSpend"
+        data-values="{{ chart_spend_values }}"
+        data-labels="{{ chart_spend_labels }}"
+        style="max-height:220px;">
+      </canvas>
+    </div>
+  </div>
+
+  <!-- Vendor Polar Area -->
+  <div class="chart-panel">
+    <div class="chart-header">
+      <div>
+        <div class="chart-title">Vendor Quotation Volume</div>
+        <div class="chart-subtitle">How many quotes each vendor has submitted</div>
+      </div>
+    </div>
+    <div class="chart-wrapper" style="height:220px;display:flex;justify-content:center;">
+      <canvas id="chartPolar"
+        data-labels="{{ vendor_labels }}"
+        data-values="{{ vendor_quotes }}"
+        style="max-width:280px;max-height:220px;">
+      </canvas>
+    </div>
+  </div>
+
+</div>
+
+<!-- Vendor Performance Table + Radar -->
+<section class="split">
+  <div class="panel">
+    <div class="panel-head">
+      <h2>⭐ Vendor Performance</h2>
+      <span class="chart-badge">Ratings</span>
+    </div>
+    {% for vendor in reports.vendor_stats %}
+      <div class="metric-row">
+        <span class="metric-name">{{ vendor.name }}</span>
+        <div class="metric-bar">
+          <div class="metric-bar-fill" style="width:{{ vendor.rating|floatformat:0 }}0%"></div>
+        </div>
+        <span class="metric-value">{{ vendor.rating }}<small style="color:var(--muted)">/5</small></span>
+      </div>
+    {% empty %}
+      <div class="empty-state">
+        <div class="empty-state-icon">🏪</div>
+        <p>No vendors with ratings yet.</p>
+      </div>
+    {% endfor %}
+  </div>
+
+  <div class="panel">
+    <div class="chart-header" style="margin-bottom:12px;">
+      <div>
+        <div class="chart-title">Vendor Radar</div>
+        <div class="chart-subtitle">Performance ratings visualised</div>
+      </div>
+    </div>
+    <div class="chart-wrapper" style="height:260px;display:flex;justify-content:center;">
+      <canvas id="chartVendorPerf"
+        data-labels="{{ vendor_labels }}"
+        data-values="{{ vendor_ratings }}"
+        style="max-width:280px;max-height:260px;">
+      </canvas>
+    </div>
+  </div>
+</section>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script src="{% static 'js/charts.js' %}"></script>
+{% endblock %}

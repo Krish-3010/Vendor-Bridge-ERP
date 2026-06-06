@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}Quotations | VendorBridge{% endblock %}
+{% block page_title %}Quotations{% endblock %}
+{% block content %}
+
+<!-- RFQs Awaiting Quotations -->
+<section class="panel">
+  <div class="panel-head">
+    <h2>📩 RFQs Awaiting Your Quotation</h2>
+    <span class="chart-badge">{{ rfqs|length }} open</span>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>RFQ Title</th>
+        <th>Category</th>
+        <th>Deadline</th>
+        <th>Status</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for rfq in rfqs %}
+        <tr>
+          <td>
+            <strong style="font-size:13px;">{{ rfq.title }}</strong>
+            <div style="font-size:11px;color:var(--muted);">{{ rfq.description|truncatechars:60 }}</div>
+          </td>
+          <td>{{ rfq.category }}</td>
+          <td>
+            <span style="font-size:12px;">{{ rfq.deadline }}</span>
+          </td>
+          <td><span class="badge {{ rfq.status }}">{{ rfq.get_status_display }}</span></td>
+          <td>
+            <a class="btn sm primary" href="{% url 'submit_quotation' rfq.id %}" id="quoteRFQ{{ rfq.id }}">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Submit / Edit
+            </a>
+          </td>
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="5">
+            <div class="empty-state">
+              <div class="empty-state-icon">📭</div>
+              <p>No RFQs assigned to you yet.</p>
+            </div>
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+<!-- Submitted Quotations -->
+<section class="panel">
+  <div class="panel-head">
+    <h2>📤 Submitted Quotations</h2>
+    <span class="chart-badge">{{ quotations|length }} total</span>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>RFQ</th>
+        <th>Vendor</th>
+        <th>Grand Total</th>
+        <th>Delivery</th>
+        <th>GST</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for quote in quotations %}
+        <tr>
+          <td>
+            <strong style="font-size:13px;">{{ quote.rfq.title }}</strong>
+            <div style="font-size:11px;color:var(--muted);">{{ quote.submitted_at|date:"M d, Y" }}</div>
+          </td>
+          <td>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div style="width:28px;height:28px;border-radius:50%;background:var(--grad-brand);display:grid;place-items:center;font-size:11px;font-weight:900;color:#060e0a;flex-shrink:0;">
+                {{ quote.vendor.name|first|upper }}
+              </div>
+              {{ quote.vendor.name }}
+            </div>
+          </td>
+          <td><strong style="color:var(--green);">₹{{ quote.grand_total|floatformat:0 }}</strong></td>
+          <td>{{ quote.delivery_days }} days</td>
+          <td>{{ quote.gst_percent }}%</td>
+          <td><span class="badge {{ quote.status }}">{{ quote.status }}</span></td>
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="6">
+            <div class="empty-state">
+              <div class="empty-state-icon">📋</div>
+              <p>No quotations submitted yet.</p>
+            </div>
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+{% endblock %}

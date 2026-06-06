@@ -1,0 +1,56 @@
+{% load static %}
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Create your VendorBridge ERP account.">
+  <title>Create Account | VendorBridge ERP</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <!-- Prevent theme flash: apply saved theme before CSS paint -->
+  <script>document.documentElement.setAttribute('data-theme', localStorage.getItem('vb-theme') || 'light');</script>
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+</head>
+<body class="auth-body">
+  <div style="width:min(860px,100%);padding:32px 0;">
+    <div style="text-align:center;margin-bottom:28px;">
+      <div style="display:inline-flex;align-items:center;gap:12px;margin-bottom:8px;">
+        <div class="auth-logo-mark">VB</div>
+        <span style="font-size:20px;font-weight:800;letter-spacing:-0.03em;">VendorBridge</span>
+      </div>
+      <h1 style="font-size:32px;font-weight:900;letter-spacing:-0.04em;margin:0 0 6px;">Create your workspace</h1>
+      <p style="color:var(--muted);font-size:14px;">Fill in the details below to join VendorBridge ERP</p>
+    </div>
+
+    <form method="post" class="panel" style="padding:32px;">
+      {% csrf_token %}
+      {{ form.non_field_errors }}
+      <div class="form-grid" style="margin-bottom:14px;">
+        <label>First Name {{ form.first_name }}{{ form.first_name.errors }}</label>
+        <label>Last Name {{ form.last_name }}{{ form.last_name.errors }}</label>
+        <label>Email Address {{ form.email }}{{ form.email.errors }}</label>
+        <label>Phone Number {{ form.phone }}{{ form.phone.errors }}</label>
+        <label>Role {{ form.role }}{{ form.role.errors }}</label>
+        <label>Country {{ form.country }}{{ form.country.errors }}</label>
+      </div>
+      <div class="form-full-row" style="margin-bottom:14px;">
+        <label style="display:grid;gap:6px;color:var(--muted);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;">
+          Address {{ form.address }}{{ form.address.errors }}
+        </label>
+      </div>
+      <div class="form-grid" style="margin-bottom:14px;">
+        <label class="signup-full-row" style="grid-column:1/span 1;">Password {{ form.password1 }}{{ form.password1.errors }}</label>
+        <label class="signup-full-row" style="grid-column:2/span 1;">Confirm Password {{ form.password2 }}{{ form.password2.errors }}</label>
+      </div>
+      <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+        <button class="btn primary" type="submit" style="min-height:44px;padding:0 28px;">
+          Create Account
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </button>
+        <a href="{% url 'login' %}" style="color:var(--muted);font-size:13px;">← Back to login</a>
+      </div>
+    </form>
+  </div>
+</body>
+</html>

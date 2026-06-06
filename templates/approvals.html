@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}Approvals | VendorBridge{% endblock %}
+{% block page_title %}Approval Workflow{% endblock %}
+{% block content %}
+
+<!-- Summary Stats -->
+<div class="stats-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:20px;">
+  <div class="stat">
+    <div class="stat-icon amber">⏳</div>
+    <div class="stat-label">Pending</div>
+    <div class="stat-value count-up" data-value="{{ approvals|length }}">{{ approvals|length }}</div>
+  </div>
+  <div class="stat">
+    <div class="stat-icon green">✅</div>
+    <div class="stat-label">Approved</div>
+    <div class="stat-value">—</div>
+  </div>
+  <div class="stat">
+    <div class="stat-icon red">❌</div>
+    <div class="stat-label">Rejected</div>
+    <div class="stat-value">—</div>
+  </div>
+</div>
+
+<section class="panel">
+  <div class="panel-head">
+    <h2>All Approval Requests <span class="h2-count">{{ approvals|length }}</span></h2>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>RFQ Title</th>
+        <th>Vendor</th>
+        <th>Amount</th>
+        <th>Status</th>
+        <th>Remarks</th>
+        <th>Decision</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for approval in approvals %}
+        <tr>
+          <td>
+            <strong style="font-size:13px;">{{ approval.rfq.title }}</strong>
+            <div style="font-size:11px;color:var(--muted);">Requested {{ approval.created_at|date:"M d, Y" }}</div>
+          </td>
+          <td>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div style="width:28px;height:28px;border-radius:50%;background:var(--grad-brand);display:grid;place-items:center;font-size:11px;font-weight:900;color:#060e0a;flex-shrink:0;">
+                {{ approval.quotation.vendor.name|first|upper }}
+              </div>
+              {{ approval.quotation.vendor.name }}
+            </div>
+          </td>
+          <td><strong>₹{{ approval.quotation.grand_total|floatformat:0 }}</strong></td>
+          <td><span class="badge {{ approval.status }}">{{ approval.get_status_display }}</span></td>
+          <td style="color:var(--muted);font-size:12px;">{{ approval.remarks|default:"—" }}</td>
+          <td>
+            {% if approval.status == "pending" %}
+              <div class="inline">
+                <form method="post" class="inline" action="{% url 'decide_approval' approval.id 'approve' %}">
+                  {% csrf_token %}
+                  <input name="remarks" placeholder="Add remarks…" style="width:140px;min-height:30px;padding:4px 8px;font-size:12px;">
+                  <button class="btn sm primary" type="submit" id="approve{{ approval.id }}">✅ Approve</button>
+                </form>
+                <form method="post" action="{% url 'decide_approval' approval.id 'reject' %}">
+                  {% csrf_token %}
+                  <button class="btn sm danger" type="submit" id="reject{{ approval.id }}">❌ Reject</button>
+                </form>
+              </div>
+            {% else %}
+              <span style="color:var(--faint);font-size:12px;">Decided {{ approval.decided_at|date:"M d" }}</span>
+            {% endif %}
+          </td>
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="6">
+            <div class="empty-state">
+              <div class="empty-state-icon">✅</div>
+              <p>No approval requests found. All clear!</p>
+            </div>
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+{% endblock %}

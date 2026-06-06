@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Activity | VendorBridge{% endblock %}
+{% block page_title %}Activity & Notifications{% endblock %}
+{% block content %}
+
+<section class="split">
+  <!-- Activity Timeline -->
+  <div class="panel">
+    <div class="panel-head">
+      <h2>⚡ Activity Timeline</h2>
+      <span class="chart-badge">{{ logs|length }} entries</span>
+    </div>
+    <div class="timeline">
+      {% for log in logs %}
+        <div class="timeline-item">
+          <div class="timeline-dot">
+            {% if "create" in log.action|lower or "add" in log.action|lower %}➕
+            {% elif "approve" in log.action|lower %}✅
+            {% elif "reject" in log.action|lower %}❌
+            {% elif "invoice" in log.action|lower %}🧾
+            {% elif "order" in log.action|lower %}🛒
+            {% else %}⚡{% endif %}
+          </div>
+          <div class="timeline-body">
+            <strong>{{ log.action }}</strong>
+            <p>{{ log.description }}</p>
+            <time>{{ log.created_at|date:"M d, Y · g:i A" }}</time>
+          </div>
+        </div>
+      {% empty %}
+        <div class="empty-state">
+          <div class="empty-state-icon">📭</div>
+          <p>No activity recorded yet.</p>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Notifications -->
+  <div class="panel">
+    <div class="panel-head">
+      <h2>🔔 Notifications</h2>
+      <span class="chart-badge">{{ notifications|length }}</span>
+    </div>
+    {% for item in notifications %}
+      <div class="notice">
+        <strong>{{ item.title }}</strong>
+        <p>{{ item.message }}</p>
+      </div>
+    {% empty %}
+      <div class="empty-state">
+        <div class="empty-state-icon">🔕</div>
+        <p>No notifications yet. You're all caught up!</p>
+      </div>
+    {% endfor %}
+  </div>
+</section>
+
+{% endblock %}

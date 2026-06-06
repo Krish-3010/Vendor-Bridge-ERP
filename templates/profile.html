@@ -1,0 +1,263 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Profile | VendorBridge{% endblock %}
+{% block page_title %}My Profile{% endblock %}
+
+{% block content %}
+
+<!-- Profile Header + Edit Form -->
+<section class="profile-grid">
+
+  <!-- Left: Profile Card + Edit Form -->
+  <div class="panel">
+    <!-- Hero Banner -->
+    <div class="profile-hero">
+      {% if request.user.profile.profile_image %}
+        <img src="{{ request.user.profile.profile_image.url }}" alt="Profile image">
+      {% else %}
+        <div class="default-avatar">{{ request.user.first_name|first|default:"U" }}{{ request.user.last_name|first }}</div>
+      {% endif %}
+      <div class="profile-hero-info">
+        <h2>{{ request.user.get_full_name|default:request.user.email }}</h2>
+        <p class="profile-role">{{ request.user.profile.get_role_display }}</p>
+        <p class="profile-email">{{ request.user.email }}</p>
+      </div>
+    </div>
+
+    <!-- Edit Form -->
+    <form method="post" enctype="multipart/form-data" class="form-grid profile-form">
+      {% csrf_token %}
+      {% for field in form %}
+        <label>{{ field.label }} {{ field }}{{ field.errors }}</label>
+      {% endfor %}
+      <div class="form-actions">
+        <button class="btn primary" type="submit">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          Save Changes
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Right: Stats + Status Breakdown -->
+  <div>
+    <!-- Key Stats -->
+    <div class="panel" style="margin-bottom:16px;">
+      <h2 style="margin-bottom:16px;">📊 My Stats</h2>
+      <div class="profile-stats">
+        <div class="profile-stat-card">
+          <div class="stat-label">My Actions</div>
+          <div class="stat-value count-up" data-value="{{ reports.action_count }}">{{ reports.action_count }}</div>
+        </div>
+        <div class="profile-stat-card">
+          <div class="stat-label">Total RFQs</div>
+          <div class="stat-value count-up" data-value="{{ reports.rfq_count }}">{{ reports.rfq_count }}</div>
+        </div>
+        <div class="profile-stat-card">
+          <div class="stat-label">Quotations</div>
+          <div class="stat-value count-up" data-value="{{ reports.quote_count }}">{{ reports.quote_count }}</div>
+        </div>
+        <div class="profile-stat-card">
+          <div class="stat-label">Total PO Value</div>
+          <div class="stat-value" style="font-size:18px;">₹<span class="count-up" data-value="{{ reports.total_po_value }}">{{ reports.total_po_value|floatformat:0 }}</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RFQ Status Pipeline -->
+    <div class="panel">
+      <h2 style="margin-bottom:4px;">🔄 RFQ Pipeline</h2>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:16px;">Current status of all procurement requests</p>
+      <div class="workflow-chart">
+        <div class="workflow-row">
+          <div class="workflow-row-info"><strong>Open</strong><span>Collecting vendor responses</span></div>
+          <b class="workflow-count">{{ reports.status_counts.open }}</b>
+        </div>
+        <div class="workflow-row">
+          <div class="workflow-row-info"><strong>Quoted</strong><span>Ready for comparison</span></div>
+          <b class="workflow-count" style="background:rgba(255,190,69,0.12);color:var(--amber);border-color:rgba(255,190,69,0.2);">{{ reports.status_counts.quoted }}</b>
+        </div>
+        <div class="workflow-row">
+          <div class="workflow-row-info"><strong>In Approval</strong><span>Awaiting manager decision</span></div>
+          <b class="workflow-count" style="background:rgba(155,114,255,0.12);color:var(--purple);border-color:rgba(155,114,255,0.2);">{{ reports.status_counts.approval }}</b>
+        </div>
+        <div class="workflow-row">
+          <div class="workflow-row-info"><strong>Approved</strong><span>Cleared for PO generation</span></div>
+          <b class="workflow-count">{{ reports.status_counts.approved }}</b>
+        </div>
+        <div class="workflow-row">
+          <div class="workflow-row-info"><strong>Ordered</strong><span>Converted to purchase orders</span></div>
+          <b class="workflow-count" style="background:rgba(34,197,168,0.12);color:var(--teal);border-color:rgba(34,197,168,0.2);">{{ reports.status_counts.ordered }}</b>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Charts Section ─────────────────────────────────────── -->
+<section class="charts-section">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+    <div>
+      <h2 style="font-size:18px;margin-bottom:4px;">📈 Analytics Dashboard</h2>
+      <p style="font-size:12px;color:var(--muted);">Visual breakdown of your procurement activity and performance</p>
+    </div>
+    <span class="chart-badge">Live Data</span>
+  </div>
+
+  <!-- Row 1: Doughnut + Bar -->
+  <div class="chart-grid">
+
+    <!-- RFQ Status Doughnut -->
+    <div class="chart-panel">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">RFQ Status Distribution</div>
+          <div class="chart-subtitle">How requests are distributed across pipeline stages</div>
+        </div>
+      </div>
+      <div class="chart-wrapper" style="max-height:230px;display:flex;justify-content:center;">
+        <canvas id="chartRfqStatus"
+          data-values="{{ chart_rfq_status_values }}"
+          width="220" height="220"
+          style="max-width:220px;max-height:220px;">
+        </canvas>
+      </div>
+      <div class="chart-legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#5eaaff;"></div> Open</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#ffbe45;"></div> Quoted</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#9b72ff;"></div> In Approval</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#2dda8a;"></div> Approved</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#22c5a8;"></div> Ordered</div>
+      </div>
+    </div>
+
+    <!-- Procurement Funnel (Horizontal Bar) -->
+    <div class="chart-panel">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Procurement Funnel</div>
+          <div class="chart-subtitle">Volume of RFQs at each pipeline stage</div>
+        </div>
+      </div>
+      <div class="chart-wrapper" style="height:230px;">
+        <canvas id="chartFunnel"
+          data-values="{{ funnel_values }}"
+          style="max-height:230px;">
+        </canvas>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Row 2: Activity Bar + Spend Line -->
+  <div class="chart-grid">
+
+    <!-- Monthly Activity Bar -->
+    <div class="chart-panel">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">My Monthly Activity</div>
+          <div class="chart-subtitle">Actions logged in the last 6 months</div>
+        </div>
+      </div>
+      <div class="chart-wrapper" style="height:220px;">
+        <canvas id="chartActivity"
+          data-values="{{ chart_activity_values }}"
+          data-labels="{{ chart_activity_labels }}"
+          style="max-height:220px;">
+        </canvas>
+      </div>
+    </div>
+
+    <!-- Spend Line Chart -->
+    <div class="chart-panel">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Monthly PO Spend (₹)</div>
+          <div class="chart-subtitle">Purchase order value over the last 6 months</div>
+        </div>
+      </div>
+      <div class="chart-wrapper" style="height:220px;">
+        <canvas id="chartSpend"
+          data-values="{{ chart_spend_values }}"
+          data-labels="{{ chart_spend_labels }}"
+          style="max-height:220px;">
+        </canvas>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Row 3: Vendor Performance Radar (wide) -->
+  {% if reports.vendor_stats %}
+  <div class="chart-grid">
+    <div class="chart-panel wide">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Vendor Performance Radar</div>
+          <div class="chart-subtitle">Star ratings for top vendors — higher is better (max 5)</div>
+        </div>
+      </div>
+      <div class="chart-wrapper" style="height:300px;display:flex;justify-content:center;">
+        <canvas id="chartVendorPerf"
+          data-labels="{{ vendor_labels }}"
+          data-values="{{ vendor_ratings }}"
+          style="max-width:360px;max-height:300px;">
+        </canvas>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+</section>
+
+<!-- ── Activity + Notifications ───────────────────────────── -->
+<section class="split">
+  <div class="panel">
+    <div class="panel-head">
+      <h2>🕐 My Action History</h2>
+      <span class="chart-badge">{{ logs|length }} entries</span>
+    </div>
+    <div class="timeline">
+      {% for log in logs %}
+        <div class="timeline-item">
+          <div class="timeline-dot">⚡</div>
+          <div class="timeline-body">
+            <strong>{{ log.action }}</strong>
+            <p>{{ log.description }}</p>
+            <time>{{ log.created_at|date:"M d, Y · g:i A" }}</time>
+          </div>
+        </div>
+      {% empty %}
+        <div class="empty-state">
+          <div class="empty-state-icon">📭</div>
+          <p>No actions recorded for your profile yet.</p>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h2>🔔 Recent Notifications</h2>
+    </div>
+    {% for item in notifications %}
+      <div class="notice">
+        <strong>{{ item.title }}</strong>
+        <p>{{ item.message }}</p>
+      </div>
+    {% empty %}
+      <div class="empty-state">
+        <div class="empty-state-icon">🔕</div>
+        <p>No notifications yet. You're all caught up!</p>
+      </div>
+    {% endfor %}
+  </div>
+</section>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script src="{% static 'js/charts.js' %}"></script>
+{% endblock %}

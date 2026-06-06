@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}RFQs | VendorBridge{% endblock %}
+{% block page_title %}Request for Quotations{% endblock %}
+{% block content %}
+
+<div class="page-actions rfq-actions">
+  <a class="btn primary" href="{% url 'create_rfq' %}">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    Create RFQ
+  </a>
+</div>
+
+<section class="cards-grid">
+  {% for rfq in rfqs %}
+    <article class="card" style="transition:all 0.25s ease;cursor:default;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <span class="badge {{ rfq.status }}">{{ rfq.get_status_display }}</span>
+        <span style="font-size:11px;color:var(--faint);font-weight:600;">{{ rfq.created_at|date:"M d, Y" }}</span>
+      </div>
+      <h2 style="font-size:15px;margin-bottom:8px;line-height:1.3;">{{ rfq.title }}</h2>
+      <p>{{ rfq.description|truncatechars:100 }}</p>
+      <div class="meta">
+        <span class="meta-item">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/></svg>
+          {{ rfq.category }}
+        </span>
+        <span class="meta-item">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          Due {{ rfq.deadline }}
+        </span>
+        <span class="meta-item">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+          {{ rfq.items.count }} items
+        </span>
+      </div>
+      <div class="card-actions">
+        <a class="btn sm" href="{% url 'compare_rfq' rfq.id %}">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          Compare
+        </a>
+        <a class="btn sm primary" href="{% url 'submit_quotation' rfq.id %}">Submit Quote</a>
+      </div>
+    </article>
+  {% empty %}
+    <div style="grid-column:1/-1;">
+      <div class="empty-state">
+        <div class="empty-state-icon">📋</div>
+        <p>No RFQs yet. Create your first request for quotation to start the procurement process.</p>
+        <a class="btn primary" href="{% url 'create_rfq' %}" style="margin-top:8px;">+ Create First RFQ</a>
+      </div>
+    </div>
+  {% endfor %}
+</section>
+
+{% endblock %}

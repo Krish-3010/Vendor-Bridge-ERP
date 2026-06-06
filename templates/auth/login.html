@@ -1,0 +1,73 @@
+{% load static %}
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Sign in to VendorBridge ERP — Centralized procurement platform.">
+  <title>Sign In | VendorBridge ERP</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <!-- Prevent theme flash: apply saved theme before CSS paint -->
+  <script>document.documentElement.setAttribute('data-theme', localStorage.getItem('vb-theme') || 'light');</script>
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+</head>
+<body class="auth-body">
+  <section class="auth-panel">
+
+    <!-- Left: Brand art -->
+    <div class="auth-art">
+      <div class="auth-logo">
+        <div class="auth-logo-mark">VB</div>
+        <span class="auth-logo-name">VendorBridge</span>
+      </div>
+      <h1>Smarter<br>Procurement</h1>
+      <p>Centralize RFQs, quotations, approvals, purchase orders, and invoices — all in one powerful ERP platform.</p>
+      <div class="auth-features">
+        <div class="auth-feature">
+          <div class="auth-feature-icon">📋</div>
+          <span>Manage RFQs and vendor responses effortlessly</span>
+        </div>
+        <div class="auth-feature">
+          <div class="auth-feature-icon">✅</div>
+          <span>Approval workflows with role-based access</span>
+        </div>
+        <div class="auth-feature">
+          <div class="auth-feature-icon">📊</div>
+          <span>Real-time analytics and spend dashboards</span>
+        </div>
+        <div class="auth-feature">
+          <div class="auth-feature-icon">🔔</div>
+          <span>Instant notifications for every procurement event</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Login Form -->
+    <form method="post" class="auth-card">
+      {% csrf_token %}
+      <h2>Welcome back 👋</h2>
+      <p class="auth-sub">Sign in to your VendorBridge workspace</p>
+      {{ form.non_field_errors }}
+      <label>
+        Email Address
+        {{ form.username }}
+      </label>
+      <label>
+        Password
+        {{ form.password }}
+      </label>
+      <button class="btn primary" type="submit" style="width:100%;justify-content:center;min-height:44px;">
+        Sign In
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </button>
+      <div style="text-align:center;display:grid;gap:10px;">
+        <a href="{% url 'signup' %}" style="color:var(--green);font-size:13px;font-weight:600;">
+          Don't have an account? Create one →
+        </a>
+        <span class="muted" style="font-size:12px;">Forgot password? Contact your VendorBridge admin.</span>
+      </div>
+    </form>
+  </section>
+</body>
+</html>

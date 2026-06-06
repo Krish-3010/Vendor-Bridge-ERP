@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}Invoices | VendorBridge{% endblock %}
+{% block page_title %}Invoices{% endblock %}
+{% block content %}
+
+<!-- Invoice Stats -->
+<div class="stats-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:20px;">
+  <div class="stat">
+    <div class="stat-icon blue">💳</div>
+    <div class="stat-label">Total Invoices</div>
+    <div class="stat-value count-up" data-value="{{ invoices|length }}">{{ invoices|length }}</div>
+  </div>
+  <div class="stat">
+    <div class="stat-icon amber">⏳</div>
+    <div class="stat-label">POs Awaiting Invoice</div>
+    <div class="stat-value count-up" data-value="{{ pos_without_invoice|length }}">{{ pos_without_invoice|length }}</div>
+  </div>
+  <div class="stat">
+    <div class="stat-icon green">✅</div>
+    <div class="stat-label">Ready to Generate</div>
+    <div class="stat-value count-up" data-value="{{ pos_without_invoice|length }}">{{ pos_without_invoice|length }}</div>
+  </div>
+</div>
+
+<!-- Invoice Table -->
+<section class="panel">
+  <div class="panel-head">
+    <h2>All Invoices <span class="h2-count">{{ invoices|length }}</span></h2>
+    <button class="btn" onclick="window.print()" id="printInvoiceBtn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+      Print
+    </button>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>Invoice #</th>
+        <th>PO Number</th>
+        <th>Vendor</th>
+        <th>Amount</th>
+        <th>Due Date</th>
+        <th>Status</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for invoice in invoices %}
+        <tr>
+          <td><strong style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--green);">{{ invoice.invoice_number }}</strong></td>
+          <td><span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);">{{ invoice.purchase_order.po_number }}</span></td>
+          <td>{{ invoice.purchase_order.quotation.vendor.name }}</td>
+          <td><strong>₹{{ invoice.amount|floatformat:0 }}</strong></td>
+          <td>
+            <span style="font-size:12px;">{{ invoice.due_date }}</span>
+          </td>
+          <td><span class="badge {{ invoice.status }}">{{ invoice.status }}</span></td>
+          <td>
+            <a class="btn sm" href="{% url 'email_invoice' invoice.id %}" id="emailInvoice{{ invoice.id }}">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              Email
+            </a>
+          </td>
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="7">
+            <div class="empty-state">
+              <div class="empty-state-icon">🧾</div>
+              <p>No invoices generated yet. Generate POs first.</p>
+            </div>
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+<!-- POs Awaiting Invoice -->
+{% if pos_without_invoice %}
+<section class="panel">
+  <div class="panel-head">
+    <h2>🟡 POs Awaiting Invoice</h2>
+    <span class="chart-badge">{{ pos_without_invoice|length }} pending</span>
+  </div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;">
+    {% for po in pos_without_invoice %}
+      <a class="btn primary" href="{% url 'generate_invoice' po.id %}" id="genInvoice{{ po.id }}">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Generate for {{ po.po_number }}
+      </a>
+    {% endfor %}
+  </div>
+</section>
+{% else %}
+<div class="panel" style="text-align:center;padding:24px;">
+  <p style="color:var(--green);font-weight:600;">✅ All purchase orders have invoices — you're all caught up!</p>
+</div>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Submit Quotation | VendorBridge{% endblock %}
+{% block page_title %}Submit Quotation{% endblock %}
+{% block content %}
+<section class="panel">
+  <h2>{{ rfq.title }}</h2>
+  <p class="muted">{{ rfq.description }} · Deadline {{ rfq.deadline }}</p>
+  <table>
+    <thead><tr><th>Item</th><th>Qty</th><th>Unit</th></tr></thead>
+    <tbody>{% for item in rfq.items.all %}<tr><td>{{ item.item_name }}</td><td>{{ item.quantity }}</td><td>{{ item.unit }}</td></tr>{% endfor %}</tbody>
+  </table>
+</section>
+<section class="panel">
+  <form method="post" class="form-grid wide quotation-form">
+    {% csrf_token %}
+    {% for field in form %}<label>{{ field.label }} {{ field }}{% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}</label>{% endfor %}
+    <div class="total-box">Estimated total updates after save using RFQ quantities and entered unit prices.</div>
+    <button class="btn primary">Submit Quotation</button>
+    <button class="btn" name="draft" value="1">Save Draft</button>
+  </form>
+</section>
+{% endblock %}
